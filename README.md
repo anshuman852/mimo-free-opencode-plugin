@@ -23,28 +23,19 @@ Instead of pointing OpenCode at a local HTTP proxy, the plugin registers a
 
 ## Install
 
-Published to **GitHub Packages** as `@anshuman852/mimo-free-opencode-plugin`.
-GitHub Packages requires auth even to install, so add an `.npmrc` next to your
-`opencode.json` (or in your home dir) that points the `@anshuman852` scope at
-GitHub and supplies a token with the `read:packages` scope:
-
-```ini
-# .npmrc
-@anshuman852:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
-```
-
-Then reference the plugin by its scoped name:
+Published to npm as [`mimo-free-opencode-plugin`](https://www.npmjs.com/package/mimo-free-opencode-plugin)
+— public, installs anonymously, no token needed. Reference it from your
+`opencode.json`:
 
 ```jsonc
 // opencode.json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["@anshuman852/mimo-free-opencode-plugin"]
+  "plugin": ["mimo-free-opencode-plugin"]
 }
 ```
 
-Or load a local build directly (no registry/token needed):
+Or load a local build directly:
 
 ```jsonc
 {
@@ -81,9 +72,9 @@ The plugin ignores whatever you type and authenticates anonymously.
 ## Public API
 
 ```ts
-import MimoFreePlugin from "@anshuman852/mimo-free-opencode-plugin";
+import MimoFreePlugin from "mimo-free-opencode-plugin";
 // or named:
-import { MimoFreePlugin } from "@anshuman852/mimo-free-opencode-plugin";
+import { MimoFreePlugin } from "mimo-free-opencode-plugin";
 ```
 
 Reusable runtime helpers (the same logic the plugin uses):
@@ -96,7 +87,7 @@ import {
   ensureMimoSystemPrompt,
   PROVIDER_ID,
   MIMO_MODEL_ID,
-} from "@anshuman852/mimo-free-opencode-plugin/runtime";
+} from "mimo-free-opencode-plugin/runtime";
 ```
 
 ## Standalone proxy (optional)
