@@ -1,8 +1,11 @@
 {
-  "name": "mimo-free-opencode-plugin",
+  "name": "@anshuman852/mimo-free-opencode-plugin",
   "version": "0.1.0",
   "description": "OpenCode provider plugin for Xiaomi MiMo Code's free mimo-auto model — anonymous, keyless, no account required",
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -43,7 +46,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anshuman852/mimo-free-opencode-plugin.git"
+    "url": "git+https://github.com/anshuman852/mimo-free-opencode-plugin.git"
   },
   "homepage": "https://github.com/anshuman852/mimo-free-opencode-plugin#readme",
   "bugs": {
