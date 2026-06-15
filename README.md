@@ -1,48 +1,107 @@
-# mimo-proxy
+# mimo-free
 
-OpenAI-compatible proxy for Xiaomi MiMo Code's free `mimo-auto` model. Handles
-the anonymous bootstrap/JWT auth that the [MiMo Code](https://github.com/XiaomiMiMo/MiMo-Code)
-CLI does internally, so any OpenAI-compatible agent/tool can use it without
-needing a MiMo account.
+An [OpenCode](https://opencode.ai) provider plugin for Xiaomi MiMo Code's free
+`mimo-auto` model. It handles the anonymous bootstrap/JWT auth that the
+[MiMo Code](https://github.com/XiaomiMiMo/MiMo-Code) CLI does internally, so you
+get the free model inside OpenCode **without a MiMo account, an API key, or
+running a separate proxy server**.
 
-## Run
+Modeled on [`opencode-omniroute-auth`](https://github.com/Alph4d0g/opencode-omniroute-auth),
+but keyless — MiMo's free tier authenticates anonymously.
 
-Locally:
+## How it differs from a proxy
 
-```bash
-deno run -A index.ts
+Instead of pointing OpenCode at a local HTTP proxy, the plugin registers a
+`mimo-free` provider whose **custom `fetch`** does everything inline:
+
+1. Generates a per-install fingerprint, persisted to `~/.mimo-free/client-fingerprint`.
+2. Exchanges it for a short-lived anonymous JWT via `POST /api/free-ai/bootstrap`.
+3. Rewrites the SDK's `…/chat/completions` call to MiMo's real `…/chat` endpoint.
+4. Forces `model: "mimo-auto"`, prepends the required `MiMoCode` system prompt,
+   and attaches the JWT + CLI headers.
+5. Refreshes the JWT ~5 min before expiry or on a `401`/`403`, retrying once.
+
+## Install
+
+From npm (once published):
+
+```jsonc
+// opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["mimo-free-opencode-plugin"]
+}
 ```
 
-Directly from GitHub (no clone needed):
+Or load a local build directly:
 
-```bash
-deno run -A https://raw.githubusercontent.com/sayeed205/mimo-proxy/main/index.ts
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["./path/to/mimo-free/dist/index.js"]
+}
 ```
 
-`-A` grants all permissions. For a tighter set:
+Build the plugin first:
 
 ```bash
-deno run --allow-net --allow-env --allow-read --allow-write index.ts
+npm install
+npm run build
 ```
 
-## Endpoints
+## Use
 
-- `POST /v1/chat/completions` - OpenAI-compatible chat endpoint (streaming and non-streaming)
-- `GET /v1/models` - lists `mimo-auto`
-- `GET /health` - health check
+After OpenCode loads the plugin, pick the **MiMo Auto (Free)** model
+(`mimo-free/mimo-auto`) from the model list — that's it.
 
-Point any OpenAI-compatible client at `http://localhost:3000/v1` with model
-`mimo-auto`. The `Authorization` header can be anything (most tools require
-one to be set) unless `PROXY_API_KEY` is configured.
+If your OpenCode version requires a provider to be "connected" before use, run:
 
-## How it works
+```
+/connect mimo-free
+```
 
-1. Generates a per-install fingerprint, persisted to `~/.mimo-proxy/client-fingerprint`.
-2. Exchanges it for a short-lived JWT via `POST /api/free-ai/bootstrap`.
-3. Forwards chat requests to `/api/free-ai/openai/chat` with that JWT, refreshing it ~5 min before expiry or on 401/403.
+choose **Anonymous — no key needed**, and just press **Enter** at the key prompt.
+The plugin ignores whatever you type and authenticates anonymously.
 
 ## Environment variables
 
-- `PORT` - listen port (default `3000`)
-- `PROXY_API_KEY` - if set, callers must send `Authorization: Bearer <PROXY_API_KEY>`
-- `MIMO_BASE_URL` - override the upstream base URL (default `https://api.xiaomimimo.com`)
+- `MIMO_BASE_URL` — override the upstream base URL (default `https://api.xiaomimimo.com`).
+
+## Public API
+
+```ts
+import MimoFreePlugin from "mimo-free-opencode-plugin";
+// or named:
+import { MimoFreePlugin } from "mimo-free-opencode-plugin";
+```
+
+Reusable runtime helpers (the same logic the plugin uses):
+
+```ts
+import {
+  bootstrap,
+  getJwt,
+  createMimoFetch,
+  ensureMimoSystemPrompt,
+  PROVIDER_ID,
+  MIMO_MODEL_ID,
+} from "mimo-free-opencode-plugin/runtime";
+```
+
+## Standalone proxy (optional)
+
+The original OpenAI-compatible proxy server still lives at
+[`proxy/server.ts`](./proxy/server.ts) for anyone who wants a plain HTTP proxy
+instead of the plugin:
+
+```bash
+deno run -A proxy/server.ts
+```
+
+It serves `POST /v1/chat/completions`, `GET /v1/models`, and `GET /health` on
+port `3000` (override with `PORT`). Set `PROXY_API_KEY` to require callers to
+send `Authorization: Bearer <key>`.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
