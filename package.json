@@ -1,6 +1,6 @@
 {
   "name": "mimo-free-opencode-plugin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "OpenCode provider plugin for Xiaomi MiMo Code's free mimo-auto model — anonymous, keyless, no account required",
   "type": "module",
   "dependencies": {
@@ -18,8 +18,12 @@
       "types": "./dist/runtime.d.ts"
     }
   },
+  "bin": {
+    "mimo-free-opencode-plugin": "./cli.js"
+  },
   "files": [
     "dist",
+    "cli.js",
     "README.md",
     "LICENSE"
   ],
