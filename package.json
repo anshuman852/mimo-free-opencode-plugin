@@ -1,8 +1,11 @@
 {
   "name": "mimo-free-opencode-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenCode provider plugin for Xiaomi MiMo Code's free mimo-auto model — anonymous, keyless, no account required",
   "type": "module",
+  "dependencies": {
+    "undici": "^6"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -23,6 +26,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "clean": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true});\"",
     "check:exports": "node --input-type=module -e \"import('./dist/index.js').then((m)=>{if(typeof m.default!=='function'){throw new Error('Default export must be a function');}for(const [key,value] of Object.entries(m)){if(typeof value!=='function'){throw new Error('Root export '+key+' must be a function to satisfy plugin loader constraints');}}})\"",
     "prepublishOnly": "npm run clean && npm run build && npm run check:exports"
@@ -55,6 +59,7 @@
   "devDependencies": {
     "@opencode-ai/plugin": "*",
     "@types/node": "^20.0.0",
+    "tsx": "^4.23.0",
     "typescript": "^5.0.0"
   },
   "engines": {

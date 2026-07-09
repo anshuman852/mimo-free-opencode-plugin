@@ -1,3 +1,5 @@
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { MimoProviderModel } from './types.js';
 
 /** OpenCode provider id. Used as the key in `config.provider` and `auth.provider`. */
@@ -34,9 +36,9 @@ export const MIMO_CHAT_URL = `${MIMO_OPENAI_BASE_URL}/chat`;
 /** Best-effort usage tracking endpoint used by the official CLI. */
 export const MIMO_TRACKING_URL = 'https://tracking.miui.com/track/v4/o';
 
-/** Mirrors the official MiMoCode CLI user agent. */
+/** User-Agent sent with API requests. Matches the format used by the MiMoCode CLI. */
 export const MIMO_USER_AGENT =
-  'mimocode/0.1.0 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14';
+  'mimocode/0.1.0/cli';
 
 /** The only model the free tier exposes. */
 export const MIMO_MODEL_ID = 'mimo-auto';
@@ -53,7 +55,28 @@ export const JWT_REFRESH_BUFFER_MS = 5 * 60_000;
  * MiMo scopes the free tier to its own CLI. The interceptor prepends it.
  */
 export const MIMOCODE_SYSTEM_PROMPT =
-  'You are MiMoCode, an interactive CLI tool that helps users with software engineering tasks.';
+  'You are MiMo Code Agent, built by Xiaomi MiMo Team. You are an interactive agent that helps users with software engineering tasks.';
+
+// --- Fingerprint pool rotation ---
+export const MAX_FINGERPRINTS = Number(process.env.MAX_FINGERPRINTS ?? 8);
+export const FP_COOLDOWN_MS = Number(process.env.FP_COOLDOWN_MS ?? 60 * 60_000);
+export const MAX_429_RETRIES = Number(process.env.MAX_429_RETRIES ?? 3);
+
+// --- IP rotation via external HTTP proxies ---
+export const ENABLE_IP_ROTATION =
+  process.env.ENABLE_IP_ROTATION !== '0' &&
+  process.env.ENABLE_IP_ROTATION !== 'false';
+export const PROXY_LIST_URL = (
+  process.env.PROXY_LIST_URL ||
+  'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/refs/heads/master/http.txt'
+).trim();
+export const PROXY_LIST_FILE =
+  join(homedir(), '.mimo-free', 'proxy-list.txt');
+export const MAX_PROXIES = Number(process.env.MAX_PROXIES ?? 10);
+export const PROXY_COOLDOWN_MS = Number(process.env.PROXY_COOLDOWN_MS ?? 60_000);
+export const PROXY_TEST_TIMEOUT_MS = Number(process.env.PROXY_TEST_TIMEOUT_MS ?? 3000);
+export const PROXY_LIST_MAX_AGE_MS = Number(process.env.PROXY_LIST_MAX_AGE_MS ?? 6 * 60 * 60_000);
+export const MAX_PROXY_RETRIES = Number(process.env.MAX_PROXY_RETRIES ?? 3);
 
 /**
  * Provider model entry registered with OpenCode for `mimo-auto`.

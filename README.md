@@ -14,12 +14,14 @@ but keyless — MiMo's free tier authenticates anonymously.
 Instead of pointing OpenCode at a local HTTP proxy, the plugin registers a
 `mimo-free` provider whose **custom `fetch`** does everything inline:
 
-1. Generates a per-install fingerprint, persisted to `~/.mimo-free/client-fingerprint`.
-2. Exchanges it for a short-lived anonymous JWT via `POST /api/free-ai/bootstrap`.
+1. Keeps a pool of anonymous fingerprints, persisted to `~/.mimo-free/fingerprints.json` (migrates the legacy `client-fingerprint` file).
+2. Exchanges the active fingerprint for a short-lived anonymous JWT via `POST /api/free-ai/bootstrap`.
 3. Rewrites the SDK's `…/chat/completions` call to MiMo's real `…/chat` endpoint.
 4. Forces `model: "mimo-auto"`, prepends the required `MiMoCode` system prompt,
    and attaches the JWT + CLI headers.
 5. Refreshes the JWT ~5 min before expiry or on a `401`/`403`, retrying once.
+6. On `429` (rate limit) parks the current fingerprint with a cooldown, rotates to another fingerprint (minting a fresh one if the pool has room), re-bootstraps, and retries — up to `MAX_429_RETRIES` times.
+7. When `ENABLE_IP_ROTATION` is set (on by default), routes outbound requests through a rotating pool of public HTTP proxies so MiMo sees a different egress IP on each rotation. Proxies are auto-tested, cached, and parked on cooldown after errors.
 
 ## Install
 
@@ -68,6 +70,23 @@ The plugin ignores whatever you type and authenticates anonymously.
 ## Environment variables
 
 - `MIMO_BASE_URL` — override the upstream base URL (default `https://api.xiaomimimo.com`).
+- `MAX_FINGERPRINTS` — max fingerprints kept in the rotation pool (default `8`).
+- `FP_COOLDOWN_MS` — how long a rate-limited fingerprint is parked before reuse (default `3600000`, 1h).
+- `MAX_429_RETRIES` — rotation+retry attempts per request on `429` (default `3`).
+
+**IP rotation** (plugin + proxy server; set `ENABLE_IP_ROTATION=0` to disable):
+
+- `PROXY_LIST_URL` — URL to fetch HTTP proxy list from (default: SpeedX public list).
+- `MAX_PROXIES` — max proxies in the rotation pool (default `10`).
+- `PROXY_COOLDOWN_MS` — cooldown for a proxy that returned an error (default `60000`, 1 min).
+- `PROXY_TEST_TIMEOUT_MS` — TCP connect timeout when testing proxies (default `3000`).
+- `PROXY_LIST_MAX_AGE_MS` — cache duration for downloaded proxy list (default `21600000`, 6h).
+- `MAX_PROXY_RETRIES` — proxy rotation retries per request (default `3`).
+
+**Proxy server only** (for `deno run -A proxy/server.ts`):
+
+- `PROXY_API_KEY` — if set, callers must send `Authorization: Bearer <key>`.
+- `PORT` — listen port (default `3000`).
 
 ## Public API
 
@@ -103,6 +122,9 @@ deno run -A proxy/server.ts
 It serves `POST /v1/chat/completions`, `GET /v1/models`, and `GET /health` on
 port `3000` (override with `PORT`). Set `PROXY_API_KEY` to require callers to
 send `Authorization: Bearer <key>`.
+
+The proxy server supports the same fingerprint pool and IP rotation features
+as the plugin — all environment variables listed above apply.
 
 ## License
 
